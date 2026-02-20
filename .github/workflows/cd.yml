@@ -1,0 +1,90 @@
+name: CD
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    strategy:
+      matrix:
+        component: [backend, trainer]
+
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Log in to Container Registry
+        uses: docker/login-action@v3
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata
+        id: meta
+        uses: docker/metadata-action@v5
+        with:
+          images: ${{ env.REGISTRY }}/${{ github.repository_owner }}/ml-train-${{ matrix.component }}
+          tags: |
+            type=sha,prefix=
+            type=ref,event=branch
+            type=raw,value=latest,enable=${{ github.ref == 'refs/heads/main' }}
+
+      - name: Build and push trainer
+        if: matrix.component == 'trainer'
+        uses: docker/build-push-action@v5
+        with:
+          context: ./trainer
+          file: ./trainer/Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+      - name: Build and push backend
+        if: matrix.component == 'backend'
+        uses: docker/build-push-action@v5
+        with:
+          context: .
+          file: .github/docker/backend.Dockerfile
+          push: true
+          tags: ${{ steps.meta.outputs.tags }}
+          labels: ${{ steps.meta.outputs.labels }}
+          cache-from: type=gha
+          cache-to: type=gha,mode=max
+
+  deploy:
+    needs: build-and-push
+    runs-on: ubuntu-latest
+    if: github.ref == 'refs/heads/main'
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Setup kubectl
+        uses: azure/setup-kubectl@v3
+        with:
+          version: 'v1.28.0'
+
+      - name: Deploy to Kubernetes
+        run: |
+          echo "Deploy step - configure KUBE_CONFIG and run:"
+          echo "  kubectl apply -f k8s/base/"
+          echo "  kubectl apply -f k8s/backend/"
+        # Uncomment and configure for real cluster:
+        # env:
+        #   KUBE_CONFIG: ${{ secrets.KUBE_CONFIG }}
+        # run: |
+        #   mkdir -p ~/.kube
+        #   echo "$KUBE_CONFIG" | base64 -d > ~/.kube/config
+        #   kubectl apply -f k8s/base/
+        #   kubectl apply -f k8s/backend/
