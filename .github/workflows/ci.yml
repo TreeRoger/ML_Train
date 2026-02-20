@@ -44,6 +44,7 @@ jobs:
 
       - name: Run backend tests
         env:
+          PYTHONPATH: ${{ github.workspace }}
           REDIS_URL: redis://localhost:6379/0
           DATABASE_URL: postgresql+asyncpg://ml_train:ml_train_secret@localhost:5432/ml_train
         run: |
