@@ -30,8 +30,8 @@ export function JobDetail({ jobId, onClose }: { jobId: string; onClose: () => vo
   const lossData = metrics?.loss?.map((m) => ({ step: m.step, loss: m.value })) || []
   const accData = metrics?.accuracy?.map((m) => ({ step: m.step, accuracy: m.value })) || []
   const chartData = lossData.length >= accData.length
-    ? lossData.map((l, i) => ({ ...l, accuracy: accData[i]?.value ?? null }))
-    : accData.map((a, i) => ({ step: a.step, loss: lossData[i]?.value ?? null, accuracy: a.value }))
+    ? lossData.map((l, i) => ({ ...l, accuracy: accData[i]?.accuracy ?? null }))
+    : accData.map((a, i) => ({ step: a.step, loss: lossData[i]?.loss ?? null, accuracy: a.accuracy }))
 
   return (
     <div style={{ padding: '2rem' }}>
