@@ -49,10 +49,7 @@ jobs:
           DATABASE_URL: postgresql+asyncpg://ml_train:ml_train_secret@localhost:5432/ml_train
         run: |
           cd backend
-          python - <<'PY'
-          from app.main import app
-          print("Backend imports OK")
-          PY
+          python -c "from app.main import app; print('Backend imports OK')"
 
   trainer-build:
     runs-on: ubuntu-latest

@@ -4,7 +4,6 @@ import uuid
 from typing import Any
 
 from celery import Celery
-from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import get_settings
 from app.core.database import async_session_maker
@@ -28,7 +27,7 @@ async def submit_job(request: JobSubmitRequest) -> tuple[str, dict[str, Any]]:
     job_id = str(uuid.uuid4())
     payload = {
         "name": request.name,
-        "model_config": request.model_config.model_dump(),
+        "model_config": request.model_spec.model_dump(),
         "training_config": request.training_config.model_dump(),
     }
 

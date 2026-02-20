@@ -2,7 +2,7 @@
 
 from enum import Enum
 from typing import Any, Optional
-from pydantic import BaseModel, Field
+from pydantic import BaseModel, Field, ConfigDict
 
 
 class JobStatus(str, Enum):
@@ -35,9 +35,11 @@ class TrainingConfig(BaseModel):
 
 class JobSubmitRequest(BaseModel):
     """Request body for submitting a training job."""
-    model_config: ModelConfig = Field(default_factory=ModelConfig)
+    # `model_config` is reserved by Pydantic v2 internals, so use alias.
+    model_spec: ModelConfig = Field(default_factory=ModelConfig, alias="model_config")
     training_config: TrainingConfig = Field(default_factory=TrainingConfig)
     name: Optional[str] = None
+    model_config = ConfigDict(populate_by_name=True)
 
 
 class JobSubmitResponse(BaseModel):
