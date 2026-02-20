@@ -27,7 +27,7 @@ async def submit_job(request: JobSubmitRequest) -> tuple[str, dict[str, Any]]:
     job_id = str(uuid.uuid4())
     payload = {
         "name": request.name,
-        "model_config": request.model_spec.model_dump(),
+        "model_config": request.architecture_config.model_dump(),
         "training_config": request.training_config.model_dump(),
     }
 
