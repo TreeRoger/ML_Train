@@ -50,6 +50,7 @@ jobs:
         run: |
           cd backend
           python -c "from app.main import app; print('Backend imports OK')"
+          pytest -q tests/test_job_schema_alias.py
 
   trainer-build:
     runs-on: ubuntu-latest
