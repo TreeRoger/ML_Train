@@ -60,7 +60,14 @@ def run_worker(rank: int, world_size: int, job_id: str, config: dict):
     sampler = DistributedSampler(train_ds, num_replicas=world_size, rank=rank)
     loader = torch.utils.data.DataLoader(train_ds, batch_size=batch_size, sampler=sampler, num_workers=0)
 
-    r = redis.from_url(REDIS_URL, decode_responses=True) if REDIS_URL else None
+    r = None
+    if REDIS_URL:
+        try:
+            r = redis.from_url(REDIS_URL, decode_responses=True)
+            r.ping()
+        except Exception as e:
+            logger.warning("Redis unavailable, metrics will not be published: %s", e)
+            r = None
     global_step = 0
 
     for epoch in range(epochs):

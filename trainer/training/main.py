@@ -58,9 +58,14 @@ def get_dataloaders(dataset: str, batch_size: int, world_size: int = 1, rank: in
     return loader
 
 
-def publish_metrics(r: redis.Redis, job_id: str, step: int, epoch: float, metrics: dict[str, float]):
-    payload = {"job_id": job_id, "step": step, "epoch": epoch, **metrics}
-    r.publish(METRICS_CHANNEL, json.dumps(payload))
+def publish_metrics(r: redis.Redis | None, job_id: str, step: int, epoch: float, metrics: dict[str, float]):
+    if r is None:
+        return
+    try:
+        payload = {"job_id": job_id, "step": step, "epoch": epoch, **metrics}
+        r.publish(METRICS_CHANNEL, json.dumps(payload))
+    except Exception as e:
+        logger.debug("Metrics publish skipped: %s", e)
 
 
 def train_one_epoch(
@@ -128,7 +133,14 @@ def run_training(config: dict[str, Any], job_id: str):
     optimizer = torch.optim.Adam(model.parameters(), lr=lr)
 
     loader = get_dataloaders(dataset, batch_size, world_size, rank=0)
-    r = redis.from_url(REDIS_URL, decode_responses=True) if REDIS_URL else None
+    r = None
+    if REDIS_URL:
+        try:
+            r = redis.from_url(REDIS_URL, decode_responses=True)
+            r.ping()
+        except Exception as e:
+            logger.warning("Redis unavailable, metrics will not be published: %s", e)
+            r = None
 
     for epoch in range(epochs):
         metrics = train_one_epoch(

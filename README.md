@@ -40,6 +40,8 @@ make orchestrator
 make dashboard
 ```
 
+**Without Docker:** Use SQLite for the DB (`DATABASE_URL=sqlite+aiosqlite:///./ml_train.db`) and run Redis locally (`brew install redis && redis-server`). The trainer runs without Redis (metrics publishing is skipped).
+
 Submit a job:
 
 ```bash
